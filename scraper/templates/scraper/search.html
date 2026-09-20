@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Search Engine | INE Store</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0c0f17;
+            --card-bg: rgba(22, 27, 39, 0.85);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.35);
+            --accent: #38bdf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --surface-hover: rgba(255, 255, 255, 0.04);
+            --radius-lg: 18px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 3rem 1.5rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Glow Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -150px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 450px;
+            background: radial-gradient(circle, var(--primary-glow) 0%, rgba(56, 189, 248, 0.15) 50%, transparent 80%);
+            z-index: -1;
+            filter: blur(80px);
+            pointer-events: none;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 860px;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.9rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #a5b4fc;
+        }
+
+        .badge-pill .pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 10px #38bdf8;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.75rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            max-width: 540px;
+        }
+
+        /* Search Section */
+        .search-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .search-box {
+            position: relative;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 0.75rem 1rem 0.75rem 3.25rem;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+        }
+
+        .search-box:focus-within {
+            border-color: rgba(99, 102, 241, 0.6);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15), 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1.25rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .search-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-main);
+            font-size: 1.15rem;
+            font-family: 'Inter', sans-serif;
+            padding-right: 2.5rem;
+        }
+
+        .search-input::placeholder {
+            color: #64748b;
+        }
+
+        .clear-btn {
+            position: absolute;
+            right: 1.25rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: var(--text-muted);
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .clear-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        /* Status & Query info */
+        .search-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .sql-chip {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-family: monospace;
+            color: #38bdf8;
+            font-size: 0.75rem;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        /* Results List */
+        .results-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .result-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            padding: 1.15rem 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(16px);
+            cursor: pointer;
+        }
+
+        .result-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(99, 102, 241, 0.4);
+            background: rgba(30, 37, 54, 0.95);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 0 15px -3px rgba(99, 102, 241, 0.2);
+        }
+
+        .result-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .result-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .result-details {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .id-tag {
+            background: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+            padding: 0.15rem 0.5rem;
+            border-radius: 5px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            letter-spacing: 0.02em;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .sku-tag {
+            color: #64748b;
+            font-family: monospace;
+        }
+
+        .select-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: #ffffff;
+            border: none;
+            padding: 0.6rem 1.1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .result-card:hover .select-btn {
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+            transform: scale(1.03);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3.5rem 1rem;
+            background: var(--card-bg);
+            border: 1px dashed var(--card-border);
+            border-radius: var(--radius-md);
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .empty-icon {
+            width: 48px;
+            height: 48px;
+            color: #64748b;
+        }
+
+        /* Loading skeleton */
+        .spinner {
+            width: 28px;
+            height: 28px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 0.8s ease-in-out infinite;
+            margin: 2rem auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .highlight {
+            background: rgba(234, 179, 8, 0.25);
+            color: #fef08a;
+            border-radius: 2px;
+            padding: 0 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="badge-pill">
+                <span class="pulse-dot"></span>
+                <span>PostgreSQL LIKE-Search Engine</span>
+            </div>
+            <h1>Search Products</h1>
+            <p class="subtitle">Search with partial or full product title. Selecting a product will open its dedicated dashboard.</p>
+        </header>
+
+        <div class="search-wrapper">
+            <div class="search-box">
+                <span class="search-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </span>
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    class="search-input" 
+                    placeholder="Search by product title (e.g. 'Headphones', 'Monitor', 'Speaker')..." 
+                    autocomplete="off"
+                    autofocus
+                />
+                <button id="clearBtn" class="clear-btn" title="Clear search">✕</button>
+            </div>
+        </div>
+
+        <div class="search-meta">
+            <span id="resultsCount">Loading products...</span>
+            <span class="sql-chip">SQL: WHERE product_title LIKE '%...%'</span>
+        </div>
+
+        <div id="spinner" class="spinner"></div>
+        <div id="resultsContainer" class="results-container"></div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const clearBtn = document.getElementById('clearBtn');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsCount = document.getElementById('resultsCount');
+        const spinner = document.getElementById('spinner');
+
+        let debounceTimer = null;
+
+        async function fetchProducts(query = '') {
+            spinner.style.display = 'block';
+            try {
+                const response = await fetch(`/api/search/?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                renderResults(data.results, query);
+                resultsCount.textContent = `Found ${data.count} result${data.count === 1 ? '' : 's'}`;
+            } catch (err) {
+                console.error('Search error:', err);
+                resultsContainer.innerHTML = `
+                    <div class="empty-state">
+                        <p>Error loading search results. Please check database connection.</p>
+                    </div>
+                `;
+            } finally {
+                spinner.style.display = 'none';
+            }
+        }
+
+        function highlightMatch(text, query) {
+            if (!query || !text) return text;
+            const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        function renderResults(products, query) {
+            if (!products || products.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="empty-state">
+                        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <p>No products matching "<strong>${query}</strong>"</p>
+                        <span style="font-size: 0.85rem; color: #64748b;">Try searching for a different keyword or ID</span>
+                    </div>
+                `;
+                return;
+            }
+
+            resultsContainer.innerHTML = products.map(prod => `
+                <div class="result-card" onclick="selectProduct('${prod.product_id}')">
+                    <div class="result-info">
+                        <div class="result-title">${highlightMatch(prod.product_title, query)}</div>
+                        <div class="result-details">
+                            <span class="id-tag">ID: ${highlightMatch(prod.product_id, query)}</span>
+                            ${prod.raw_sku ? `<span class="sku-tag">${highlightMatch(prod.raw_sku, query)}</span>` : ''}
+                        </div>
+                    </div>
+                    <button class="select-btn" onclick="event.stopPropagation(); selectProduct('${prod.product_id}')">
+                        <span>Select</span>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function selectProduct(productId) {
+            // Redirect to /dashboard/{product_id}
+            window.location.href = `/dashboard/${encodeURIComponent(productId)}/`;
+        }
+
+        // Live search with debounce
+        searchInput.addEventListener('input', (e) => {
+            const val = e.target.value;
+            clearBtn.style.display = val ? 'flex' : 'none';
+
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                fetchProducts(val);
+            }, 250);
+        });
+
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            clearBtn.style.display = 'none';
+            searchInput.focus();
+            fetchProducts('');
+        });
+
+        // Initial Load
+        fetchProducts('');
+    </script>
+</body>
+</html>
