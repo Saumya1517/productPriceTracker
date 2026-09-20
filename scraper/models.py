@@ -4,6 +4,7 @@ class Product(models.Model):
     product_id = models.CharField(max_length=50, primary_key=True, help_text="Last 3 characters trimmed from p.title-sku")
     product_title = models.CharField(max_length=255)
     raw_sku = models.CharField(max_length=255, null=True, blank=True)
+    price = models.IntegerField(null=True, blank=True, help_text="Scraped integer product price")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
