@@ -1,5 +1,5 @@
 services:
-  # Web Service hosting the Django App
+  # Web Service hosting Django + Embedded 15-Minute Background Price Scraper
   - type: web
     name: ine-product-price-tracker
     runtime: python
@@ -16,18 +16,3 @@ services:
         value: "False"
       - key: DATABASE_URL
         sync: false
-
-  # Optional Background Cron Job for Price Scraping
-  - type: cron
-    name: ine-hourly-price-scraper-cron
-    runtime: python
-    region: singapore
-    plan: free
-    schedule: "*/15 * * * *"
-    buildCommand: ./build.sh
-    startCommand: python check_all_tracked_prices.py
-    envVars:
-      - key: DATABASE_URL
-        sync: false
-      - key: PYTHON_VERSION
-        value: 3.11.9
