@@ -103,8 +103,18 @@ def dashboard_view(request, product_id):
 
     # Chart data in chronological order
     chronological_history = list(product.price_history.all().order_by('fetched_at'))
-    chart_labels = [timezone.localtime(ph.fetched_at).strftime('%b %d, %H:%M:%S') for ph in chronological_history]
-    chart_prices = [ph.price for ph in chronological_history]
+    
+    # Fallback to current product price if history is empty
+    if not chronological_history and product.price is not None:
+        max_price = product.price
+        min_price = product.price
+        avg_price = product.price
+        timestamp_str = timezone.localtime(product.updated_at or product.created_at).strftime('%b %d, %H:%M:%S')
+        chart_labels = [timestamp_str]
+        chart_prices = [product.price]
+    else:
+        chart_labels = [timezone.localtime(ph.fetched_at).strftime('%b %d, %H:%M:%S') for ph in chronological_history]
+        chart_prices = [ph.price for ph in chronological_history]
 
     context = {
         'product': product,
@@ -154,6 +164,10 @@ def track_product_api(request, product_id):
         TrackedProduct.objects.create(product=product)
         is_tracked = True
         message = "Product successfully added to tracked products!"
+        # Create baseline PriceHistory entry if product has a recorded price
+        if product.price is not None and not product.price_history.exists():
+            PriceHistory.objects.create(product=product, price=product.price)
+
 
     return JsonResponse({
         'success': True,

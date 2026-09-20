@@ -17,26 +17,41 @@ def scrape_single_product_price(product_id: str, headless: bool = True, max_retr
             print(msg)
 
     target_url = f"https://demo.inelabteamdev.com/product/{product_id}"
-    last_error = None
+    import sys
+    is_linux = sys.platform != 'win32'
+    run_headless = True if is_linux else headless
+
+    chrome_args = [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--no-first-run',
+        '--no-zygote',
+    ]
 
     for attempt in range(1, max_retries + 1):
         log(f"\n[Attempt {attempt}/{max_retries}] Opening product page: {target_url}")
 
         with sync_playwright() as p:
             browser = None
-            for launch_opts in [
-                {'headless': headless},
-                {'headless': headless, 'channel': 'msedge'},
-                {'headless': headless, 'channel': 'chrome'},
-            ]:
+            launch_attempts = [
+                {'headless': run_headless, 'args': chrome_args},
+                {'headless': run_headless, 'channel': 'chrome', 'args': chrome_args},
+                {'headless': run_headless, 'channel': 'chromium', 'args': chrome_args},
+                {'headless': run_headless, 'channel': 'msedge', 'args': chrome_args},
+            ]
+            for launch_opts in launch_attempts:
                 try:
                     browser = p.chromium.launch(**launch_opts)
                     break
-                except Exception:
+                except Exception as launch_err:
+                    last_error = launch_err
                     continue
 
             if not browser:
-                raise RuntimeError("Could not launch Playwright browser.")
+                raise RuntimeError(f"Could not launch Playwright browser. Details: {last_error}")
+
 
             context = browser.new_context()
             page = context.new_page()
