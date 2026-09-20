@@ -25,3 +25,18 @@ class TrackedProduct(models.Model):
 
     class Meta:
         ordering = ['-tracked_at']
+
+
+class PriceHistory(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='price_history')
+    price = models.IntegerField(help_text="Fetched product price")
+    fetched_at = models.DateTimeField(auto_now_add=True, help_text="Timestamp when price was fetched")
+
+    def __str__(self):
+        return f"{self.product.product_id} - Rs. {self.price} at {self.fetched_at}"
+
+
+    class Meta:
+        db_table = 'price_history'
+        ordering = ['-fetched_at']
+

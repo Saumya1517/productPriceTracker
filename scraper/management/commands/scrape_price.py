@@ -2,9 +2,10 @@ import os
 import time
 from django.core.management.base import BaseCommand
 from playwright.sync_api import sync_playwright
-from scraper.models import Product
+from scraper.models import Product, PriceHistory
 
 def scrape_single_product_price(product_id: str, headless: bool = True, max_retries: int = 5, logger=None):
+
     os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
     def log(msg, style_func=None):
         if logger:
@@ -125,10 +126,17 @@ def scrape_single_product_price(product_id: str, headless: bool = True, max_retr
                     defaults=defaults
                 )
 
+                # Store price history entry
+                history_entry = PriceHistory.objects.create(
+                    product=product,
+                    price=price_integer
+                )
+
                 action = "Created" if created else "Updated"
-                log(f"[SUCCESS] {action} Product {product_id} with Price: {price_integer}")
+                log(f"[SUCCESS] {action} Product {product_id} with Price: {price_integer} (Recorded history at {history_entry.fetched_at})")
                 # Exit immediately when successfully fetched
                 return price_integer
+
 
             except Exception as e:
                 last_error = e

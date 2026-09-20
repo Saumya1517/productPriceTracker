@@ -60,12 +60,15 @@ if db_url:
     import socket, urllib.parse
     parsed = urllib.parse.urlparse(db_url)
     hostname = parsed.hostname
+    port = parsed.port or 5432
     if hostname:
         try:
-            socket.gethostbyname(hostname)
+            s = socket.create_connection((hostname, port), timeout=2.0)
+            s.close()
             use_postgres = True
-        except socket.error:
+        except (socket.error, OSError):
             use_postgres = False
+
 
 if use_postgres:
     DATABASES = {
@@ -100,7 +103,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 

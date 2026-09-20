@@ -73,6 +73,10 @@ def search_view(request):
     return render(request, 'scraper/search.html')
 
 
+import json
+from django.db.models import Max, Min, Avg
+from django.utils import timezone
+
 def dashboard_view(request, product_id):
     """Render Dashboard Frontend for /dashboard/{product_id}"""
     product = get_object_or_404(Product, product_id=product_id)
@@ -83,6 +87,25 @@ def dashboard_view(request, product_id):
     # Related products
     related_products = Product.objects.exclude(product_id=product_id)[:4]
 
+    # Price history records (latest 20)
+    price_history = product.price_history.all()[:20]
+
+    # Stats and Chart data for tracked products
+    stats = product.price_history.aggregate(
+        max_price=Max('price'),
+        min_price=Min('price'),
+        avg_price=Avg('price')
+    )
+    
+    max_price = stats['max_price']
+    min_price = stats['min_price']
+    avg_price = round(stats['avg_price'], 2) if stats['avg_price'] is not None else None
+
+    # Chart data in chronological order
+    chronological_history = list(product.price_history.all().order_by('fetched_at'))
+    chart_labels = [timezone.localtime(ph.fetched_at).strftime('%b %d, %H:%M:%S') for ph in chronological_history]
+    chart_prices = [ph.price for ph in chronological_history]
+
     context = {
         'product': product,
         'product_id': product.product_id,
@@ -92,8 +115,16 @@ def dashboard_view(request, product_id):
         'updated_at': product.updated_at,
         'is_tracked': is_tracked,
         'related_products': related_products,
+        'price_history': price_history,
+        'max_price': max_price,
+        'min_price': min_price,
+        'avg_price': avg_price,
+        'chart_labels_json': json.dumps(chart_labels),
+        'chart_prices_json': json.dumps(chart_prices),
     }
     return render(request, 'scraper/dashboard.html', context)
+
+
 
 
 @csrf_exempt
