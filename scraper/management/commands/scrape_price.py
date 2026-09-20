@@ -84,33 +84,36 @@ def scrape_single_product_price(product_id: str, headless: bool = True, max_retr
                 if not price_main:
                     raise ValueError(".price-main container not found after clicking.")
 
-                # Inside .price-main, select the first div
+                # Inside .price-main, select first div
                 first_div = price_main.query_selector("div")
-                if not first_div:
-                    raise ValueError("First div inside .price-main not found.")
+                target_container = first_div if first_div else price_main
 
-                # Inside that first div, select all span elements
-                spans = first_div.query_selector_all("span")
-
-                # Read text of each span, keep only spans containing digits 0-9
+                # Extract digits from leaf spans (spans without child spans) or container text
+                all_spans = target_container.query_selector_all("span")
+                leaf_spans = [s for s in all_spans if not s.query_selector("span")]
+                
                 extracted_digits = []
-                for s in spans:
+                for s in (leaf_spans if leaf_spans else all_spans):
                     text = s.inner_text().strip()
                     if text.isdigit():
                         extracted_digits.append(text)
-                    else:
-                        digits = [c for c in text if c.isdigit()]
-                        if digits:
-                            extracted_digits.extend(digits)
 
-                # Join remaining digits together
                 joined_value = "".join(extracted_digits)
+
+                # If joined value is missing or unreasonably long due to duplicates, extract via regex
+                if not joined_value or len(joined_value) > 10:
+                    import re
+                    raw_text = price_main.inner_text().replace(',', '').replace(' ', '')
+                    numbers = re.findall(r'\d+', raw_text)
+                    if numbers:
+                        joined_value = numbers[0]
 
                 if not joined_value:
                     raise ValueError(f"No numeric price digits found for product {product_id}")
 
                 # Convert joined value to integer
                 price_integer = int(joined_value)
+
 
                 # Also fetch h1 title if available
                 h1_el = page.query_selector("h1")
